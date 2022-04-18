@@ -96,12 +96,18 @@ class Play extends Phaser.Scene {
         this.currentTrack.play();
         this.currentTrackInfo = this.testTrack0Info;
 
-        // running info (could be merged with track info as necessary)
+        // beat/measure info (could be merged with track info as necessary)
+        // current beat position (can be non-integer value)
         this.beatPos = 1;
+        // current measure position (can be non-integer)
         this.measurePos = 1;
+        // how many beats before the counter resets
         this.beatReset = this.currentTrackInfo.measureSig;
+        // how many measures before the counter resets
         this.measureReset = 4;
+        // beat diff from last loop (used to track when beats hit)
         this.lastBeatDiff = 1;
+        // measure diff from last loop (used to track when beats hit)
         this.lastMeasureDiff = 1;
 
         // init notes array
