@@ -15,8 +15,10 @@ class Play extends Phaser.Scene {
         let width = config.width;
         let height = config.height;
 
+        // define key variables
         this.defineKeys();
 
+        // init background
         this.backgrounds = new Array(2);
         this.backgrounds[0] = this.add.tileSprite(0, 0, width, height, 'background0').setOrigin(0, 0);
         this.backgrounds[1] = this.add.tileSprite(0, 0, width, height, 'background1').setOrigin(0, 0);
@@ -24,20 +26,15 @@ class Play extends Phaser.Scene {
         this.backgroundScrollSpeeds[0] = 4;
         this.backgroundScrollSpeeds[1] = 1;
 
+        // init player settings
         Game.player = {
             score : 0
         };
 
+        // init player entity
         this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
         this.player.setOrigin(0.5, 0);
         this.player.setControls(keyLEFT, keyRIGHT);
-
-        //this.rockets = new Array(Game.settings.numPlayers);
-        // add rocket (p1) - neutral texture
-        //this.rockets[0] = new Rocket(this, width/2, height - borderUISize - borderPadding, 'rocket');
-        //this.rockets[0].setOrigin(0.5, 0);
-        //this.rockets[0].playerID = 0;
-        //this.rockets[0].setControls(keyLEFT, keyRIGHT, keyUP);
 
         let rectColor = 0x00FF00;
         let borderColor = 0xFFFFFF;
@@ -64,9 +61,11 @@ class Play extends Phaser.Scene {
         }
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2,
             Game.player.score, this.scoreConfig);
+        // display beat counter
         this.beatCounterText = this.add.text(width - borderUISize - borderPadding - this.scoreConfig.fixedWidth,
-            borderUISize + borderPadding*2, 0, this.scoreConfig);
+            borderUISize + borderPadding*2, 1, this.scoreConfig);
 
+        // init health and health counter
         this.health = 100;
         this.healthTextConfig = {
             fontFamily: 'Courier',
@@ -87,19 +86,25 @@ class Play extends Phaser.Scene {
         // GAME OVER flag
         this.gameOver = false;
 
-        // audio manager
-        this.testTrack = Audio.addMulti(this, 'testTrack');
-        this.testTrack.setGlobalConfig({loop: true});
-        this.testTrack.play();
-        this.testBPM = 135;
-        this.measureSig = 4;
-        this.beatPos = 0;
-        this.measurePos = 0;
-        this.beatReset = this.measureSig;
+        // add tracks
+        this.testTrack0 = Audio.addMulti(this, 'testTrack0');
+        this.testTrack0.setGlobalConfig({loop: true});
+        this.testTrack0Info = testTrack0Info;
+
+        // current track
+        this.currentTrack = this.testTrack0;
+        this.currentTrack.play();
+        this.currentTrackInfo = this.testTrack0Info;
+
+        // running info (could be merged with track info as necessary)
+        this.beatPos = 1;
+        this.measurePos = 1;
+        this.beatReset = this.currentTrackInfo.measureSig;
         this.measureReset = 4;
         this.lastBeatDiff = 1;
         this.lastMeasureDiff = 1;
 
+        // init notes array
         this.notes = new Array(0);
     }
 
@@ -109,11 +114,12 @@ class Play extends Phaser.Scene {
             //this.sound.play('sfx_select');
             //this.music.destroy();
             if (Phaser.Input.Keyboard.JustDown(keyENTER)) {
-                this.testTrack.destroy();
+                this.currentTrack.destroy();
                 this.scene.restart();
             }
         }
 
+        // scroll paralax backgrounds along given scroll axis
         const scrollAxis = 'tilePositionY';
         for (let i = 0; i < this.backgrounds.length; ++i) {
             this.backgrounds[i][scrollAxis] -= this.backgroundScrollSpeeds[i];
@@ -135,9 +141,10 @@ class Play extends Phaser.Scene {
                 this.outOfHealth();
             }
 
-            let beatDelta = (delta / UpdateTime.mRatio) * this.testBPM;
+            // compute beat and measure time
+            let beatDelta = (delta / UpdateTime.mRatio) * this.currentTrackInfo.BPM;
             this.beatPos += beatDelta;
-            this.measurePos += beatDelta / this.measureSig;
+            this.measurePos += beatDelta / this.currentTrackInfo.measureSig;
 
             let beatDiff = this.beatPos - Math.floor(this.beatPos);
             if (beatDiff < this.lastBeatDiff) {
@@ -165,6 +172,7 @@ class Play extends Phaser.Scene {
             // update notes
             this.notes.forEach(n => n.update(time, delta));
 
+            // check notes collision with player
             for (let i = 0; i < this.notes.length; ) {
                 if (this.notes[i].checkCollision(this.player)) {
                     this.noteHit(this.notes[i]);
@@ -176,6 +184,7 @@ class Play extends Phaser.Scene {
                 }
             }
 
+            // check notes off screen
             for (let i = 0; i < this.notes.length; ) {
                 if (this.notes[i].offScreen()) {
                     this.notes[i].destroy();
@@ -208,7 +217,21 @@ class Play extends Phaser.Scene {
 
     noteHit(note) {
         this.sound.play('menu_select');
-        this.health += 5;
+
+        // the amount of error from beat
+        let beatDiff = Math.min(this.beatPos - Math.floor(this.beatPos),
+            Math.ceil(this.beatPos) - this.beatPos);
+        
+
+        // health gained if perfectly on beat
+        const maxHealthGain = 10;
+        // ratio of how much error affects health gain
+        const diffMult = 2;
+        // health multiplier, min 0
+        let healthMult = Math.max(1 - (beatDiff * diffMult), 0);
+
+        // increment health
+        this.health += maxHealthGain * healthMult;
     }
 
     createNote() {
@@ -216,9 +239,11 @@ class Play extends Phaser.Scene {
         let height = Game.config.height;
         let newNote = new Note(this, width / 2, 0, 'note');
         newNote.setOrigin(0.5, 1);
-        newNote.speed = (1 / UpdateTime.mRatio) * (1 / this.measureSig)
-            * this.testBPM * (height - borderUISize);
+        // move speed of note based on BPM - note will cross screen in one measures time
+        newNote.speed = (1 / UpdateTime.mRatio) * (1 / this.currentTrackInfo.measureSig)
+            * this.currentTrackInfo.BPM * (height - borderUISize);
 
+        // add note to current notes
         this.notes.push(newNote);
     }
 
@@ -229,7 +254,7 @@ class Play extends Phaser.Scene {
         //this.add.text(width/2, height/2 + 64, 'Press (R) to Restart or <- for Menu',
         //    this.scoreConfig).setOrigin(0.5);
         this.gameOver = true;
-        this.testTrack.setConfig('Synth 1', {mute : true});
-        this.testTrack.setConfig('Drums', {mute : true});
+        this.currentTrack.setConfig('Synth 1', {mute : true});
+        this.currentTrack.setConfig('Drums', {mute : true});
     }
 }
