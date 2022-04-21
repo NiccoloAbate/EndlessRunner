@@ -91,10 +91,14 @@ class Play extends Phaser.Scene {
         this.testTrack0.setGlobalConfig({loop: true});
         this.testTrack0Info = testTrack0Info;
 
+        this.testTrack1 = Audio.addMulti(this, 'testTrack1');
+        this.testTrack1.setGlobalConfig({loop: true});
+        this.testTrack1Info = testTrack1Info;
+
         // current track
-        this.currentTrack = this.testTrack0;
+        this.currentTrack = this.testTrack1;
         this.currentTrack.play();
-        this.currentTrackInfo = this.testTrack0Info;
+        this.currentTrackInfo = this.testTrack1Info;
 
         // beat/measure info (could be merged with track info as necessary)
         // current beat position (can be non-integer value)
@@ -230,7 +234,7 @@ class Play extends Phaser.Scene {
         
 
         // health gained if perfectly on beat
-        const maxHealthGain = 10;
+        const maxHealthGain = 15;
         // ratio of how much error affects health gain
         const diffMult = 2;
         // health multiplier, min 0
@@ -244,10 +248,10 @@ class Play extends Phaser.Scene {
         let width = Game.config.width;
         let height = Game.config.height;
         let newNote = new Note(this, width / 2, 0, 'note');
-        newNote.setOrigin(0.5, 1);
+        newNote.setOrigin(0.5, 0.5);
         // move speed of note based on BPM - note will cross screen in one measures time
         newNote.speed = (1 / UpdateTime.mRatio) * (1 / this.currentTrackInfo.measureSig)
-            * this.currentTrackInfo.BPM * (height - borderUISize);
+            * this.currentTrackInfo.BPM * (height - borderUISize - newNote.height);
 
         // add note to current notes
         this.notes.push(newNote);

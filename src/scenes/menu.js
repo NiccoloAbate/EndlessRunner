@@ -10,6 +10,7 @@ class Menu extends Phaser.Scene {
         // load audio
         this.load.audio('menu_select', 'assets/sfx/blip_select12.wav');
         Audio.preloadMulti(this, 'testTrack0', testTrack0StemFileNames, testTrack0StemNames);
+        Audio.preloadMulti(this, 'testTrack1', testTrack1StemFileNames, testTrack1StemNames);
 
         // menu text config
         this.menuConfig = {

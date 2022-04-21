@@ -67,14 +67,14 @@ class AudioManager {
         this[trackName] = {};
         this[trackName].stemNames = stemNames;
         for (let i = 0; i < stemFileNames.length; ++i) {
-            scene.load.audio(stemNames[i], stemFileNames[i]);
+            scene.load.audio(trackName + '_' + stemNames[i], stemFileNames[i]);
         }
     }
 
     addMulti(scene, trackName, configs = undefined) {
         let stems = new Array(this[trackName].stemNames.length);
         for (let i = 0; i < stems.length; ++i) {
-            stems[i] = scene.sound.add(this[trackName].stemNames[i]);
+            stems[i] = scene.sound.add(trackName + '_' + this[trackName].stemNames[i]);
         }
 
         let track = new AudioMultiTrack(stems, this[trackName].stemNames, configs);
