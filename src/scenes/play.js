@@ -95,16 +95,17 @@ class Play extends Phaser.Scene {
         this.testTrack1.setGlobalConfig({loop: true});
         this.testTrack1Info = testTrack1Info;
 
+        this.trackVarNames = ['testTrack0', 'testTrack1'];
+
         // current track
-        this.currentTrack = this.testTrack1;
+        this.chooseRandomTrack();
         this.currentTrack.play();
-        this.currentTrackInfo = this.testTrack1Info;
 
         // beat/measure info (could be merged with track info as necessary)
         // current beat position (can be non-integer value)
-        this.beatPos = 1;
+        this.beatPos = 0;
         // current measure position (can be non-integer)
-        this.measurePos = 1;
+        this.measurePos = 0;
         // how many beats before the counter resets
         this.beatReset = this.currentTrackInfo.measureSig;
         // how many measures before the counter resets
@@ -116,6 +117,23 @@ class Play extends Phaser.Scene {
 
         // init notes array
         this.notes = new Array(0);
+
+        // init lanes
+        const nLanes = 3;
+        this.lanes = new Array(3);
+        for (let i = 0; i < nLanes; ++i) {
+            this.lanes[i] = {};
+            // spread the lanes evenly across the width
+            this.lanes[i].x = (Game.config.width / (nLanes + 1)) * (i + 1);
+        }
+
+        // sets the metronome on/off
+        this.metronome = false;
+
+        // init effects
+        this.inEffect = false;
+
+        this.createDebugKeybinds();
     }
 
     update(time, delta) {
@@ -151,17 +169,28 @@ class Play extends Phaser.Scene {
                 this.outOfHealth();
             }
 
-            // compute beat and measure time
-            let beatDelta = (delta / UpdateTime.mRatio) * this.currentTrackInfo.BPM;
-            this.beatPos += beatDelta;
-            this.measurePos += beatDelta / this.currentTrackInfo.measureSig;
+            // compute beat and measure time using actual track time
+            // BPM remains default even when shifted because of some Phaser audio oddity
+            let useBPM = this.currentTrackDefaultInfo.BPM;
+            this.beatPos = this.currentTrack.stems[0].seek * (1 / 60) * useBPM;
+            this.measurePos = this.beatPos / this.currentTrackInfo.measureSig;
+            this.beatPos %= this.beatReset;
+            this.measurePos %= this.measureReset;
+
 
             let beatDiff = this.beatPos - Math.floor(this.beatPos);
             if (beatDiff < this.lastBeatDiff) {
                 // beat just completed
 
                 // do stuff
-                this.beatCounterText.text = Math.floor(this.beatPos);
+                this.beatCounterText.text = Math.floor(this.beatPos + 1);
+
+                if (Math.floor(this.beatPos) % 2 == 0) {
+                    this.createNote();
+                }
+
+                if (this.metronome)
+                    this.sound.play('menu_select', {detune : 1200});
             }
             this.lastBeatDiff = beatDiff;
             let measureDiff = this.measurePos - Math.floor(this.measurePos);
@@ -169,7 +198,6 @@ class Play extends Phaser.Scene {
                 // measure just completed
 
                 // do stuff
-                this.createNote();
             }
             this.lastMeasureDiff = measureDiff;
 
@@ -199,12 +227,17 @@ class Play extends Phaser.Scene {
                 if (this.notes[i].offScreen()) {
                     this.notes[i].destroy();
                     this.notes.splice(i, 1); // remove the note
+
+                    const healthLoss = 5;
+                    this.health -= healthLoss;
                 }
                 else {
                     ++i;
                 }
             }
         }
+
+        this.updateEffects(delta);
     }
 
     defineKeys() {
@@ -226,12 +259,11 @@ class Play extends Phaser.Scene {
     }
 
     noteHit(note) {
-        this.sound.play('menu_select');
-
         // the amount of error from beat
         let beatDiff = Math.min(this.beatPos - Math.floor(this.beatPos),
             Math.ceil(this.beatPos) - this.beatPos);
         
+        console.log(beatDiff);
 
         // health gained if perfectly on beat
         const maxHealthGain = 15;
@@ -242,19 +274,32 @@ class Play extends Phaser.Scene {
 
         // increment health
         this.health += maxHealthGain * healthMult;
+
+        let det = (((-1 * beatDiff) + 0.5) * 2) * 1200;
+        let sConfig = { detune: det };
+        this.sound.play('menu_select', sConfig);
     }
 
     createNote() {
-        let width = Game.config.width;
-        let height = Game.config.height;
-        let newNote = new Note(this, width / 2, 0, 'note');
+        let x = this.lanes[getRandomInt(0, this.lanes.length)].x;
+        let newNote = new Note(this, x, 0, 'note');
         newNote.setOrigin(0.5, 0.5);
-        // move speed of note based on BPM - note will cross screen in one measures time
-        newNote.speed = (1 / UpdateTime.mRatio) * (1 / this.currentTrackInfo.measureSig)
-            * this.currentTrackInfo.BPM * (height - borderUISize - newNote.height);
+        newNote.setScale(1, 1.5);
+
+        newNote.speed = this.computeNoteSpeed();
 
         // add note to current notes
         this.notes.push(newNote);
+    }
+
+    computeNoteSpeed() {
+        let width = Game.config.width;
+        let height = Game.config.height;
+        // extra margin to give player a little time, if == 0 then note arrives exactly on beat
+        const slideMargin = borderUISize * 0.75;
+        // move speed of note based on BPM - note will cross screen in one measures time
+        return (1 / UpdateTime.mRatio) * (1 / this.currentTrackInfo.measureSig)
+        * this.currentTrackInfo.BPM * (height - borderUISize - slideMargin);
     }
 
     outOfHealth() {
@@ -266,5 +311,98 @@ class Play extends Phaser.Scene {
         this.gameOver = true;
         this.currentTrack.setConfig('Synth 1', {mute : true});
         this.currentTrack.setConfig('Drums', {mute : true});
+    }
+
+    chooseRandomTrack() {
+        let nTracks = this.trackVarNames.length;
+        let ind = getRandomInt(0, this.trackVarNames.length);
+        let trackVarName = this.trackVarNames[ind];
+
+        this.currentTrack = this[trackVarName];
+        this.currentTrackDefaultInfo = this[trackVarName + 'Info'];
+        // deep clone of object
+        this.currentTrackInfo = JSON.parse(JSON.stringify(this.currentTrackDefaultInfo));
+    }
+
+    // playing with affects -- some spaghet code
+
+    updateEffects(delta) {
+        this.updateSlowEffect(delta);
+    }
+
+    updateSlowEffect(delta) {
+        if (!this.speedTransition) return;
+
+        const effectRampTime = 0.35; // second
+        this.speedTransitionTime += delta;
+
+        let effectPos = Math.min(1, (this.speedTransitionTime / UpdateTime.sRatio) / effectRampTime);
+        if (this.slow) {
+            this.currentTrackInfo.BPM = lerp(this.currentTrackDefaultInfo.BPM,
+                this.currentTrackDefaultInfo.BPM / 2, effectPos);
+        }
+        else {
+            this.currentTrackInfo.BPM = lerp(this.currentTrackDefaultInfo.BPM / 2,
+                this.currentTrackDefaultInfo.BPM, effectPos);
+        }
+        
+        if (effectPos == 1) {
+            this.speedTransition = false;
+            this.inEffect = false; // this is the only effect right now...
+        }
+
+        // −12log2(t1/t2) where t1 = tempo before change and t2 = tempo after change
+        let speedRatio = this.currentTrackDefaultInfo.BPM / this.currentTrackInfo.BPM;
+        let det = -12 * Math.log2(speedRatio) * 100;
+        this.currentTrack.setGlobalConfig( {detune : det} );
+        this.notes.forEach(n => n.speed = this.computeNoteSpeed());
+    }
+    startSlowDownEffect() {
+        //this.currentTrackInfo.BPM = this.currentTrackDefaultInfo.BPM / 2;
+        //this.currentTrack.setGlobalConfig( {detune : -1200} );
+
+        this.slow = !this.slow;
+        this.speedTransition = true;
+        this.inEffect = true;
+        this.speedTransitionTime = 0;
+
+        //this.notes.forEach(n => n.speed = this.computeNoteSpeed());
+        this.destroyAllNotes();
+    }
+    endSlowDownEffect() {
+        //this.currentTrackInfo.BPM = this.currentTrackDefaultInfo.BPM;
+        //this.currentTrack.setGlobalConfig( {detune : 0} );
+
+        this.slow = !this.slow;
+        this.speedTransition = true;
+        this.inEffect = true;
+        this.speedTransitionTime = 0;
+
+        //this.notes.forEach(n => n.speed = this.computeNoteSpeed());
+        this.destroyAllNotes();
+    }
+
+    destroyAllNotes() {
+        this.notes.forEach(n => n.destroy());
+        this.notes = new Array(0);
+    }
+
+    createDebugKeybinds() {
+        this.input.keyboard.on('keydown-R', (event) => {
+            this.currentTrack.destroy();
+            this.scene.restart(); 
+        });
+
+        this.slow = false;
+        this.speedTransition = false;
+        this.speedTransitionTime = 0;
+        this.input.keyboard.on('keydown-S', (event) => {
+            if (this.speedTransition) return;
+
+            if (this.slow)
+                this.endSlowDownEffect();
+            else
+                this.startSlowDownEffect();
+        });
     }
 }

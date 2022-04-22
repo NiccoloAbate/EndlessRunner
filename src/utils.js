@@ -9,8 +9,18 @@ function getRandomIntInclusive(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
 }
 
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); //The maximum is inclusive and the minimum is inclusive
+}
+
 function clamp(number, min, max) {
   return Math.max(min, Math.min(number, max));
+}
+
+function lerp(min, max, pos) {
+  return ((max - min) * pos) + min;
 }
 
 let UpdateTime = {
@@ -18,3 +28,4 @@ let UpdateTime = {
     msRatio: 1,
     mRatio: 60000
 }
+
