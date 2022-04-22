@@ -67,6 +67,7 @@ class Play extends Phaser.Scene {
 
         // init health and health counter
         this.health = 100;
+        this.maxHealth = 150;
         this.healthTextConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
@@ -125,6 +126,11 @@ class Play extends Phaser.Scene {
             this.lanes[i] = {};
             // spread the lanes evenly across the width
             this.lanes[i].x = (Game.config.width / (nLanes + 1)) * (i + 1);
+        }
+        this.player.lanes = this.lanes;
+        this.player.snapToLanes = true;
+        if (this.player.snapToLanes) {
+            this.player.snapToClosestLane();
         }
 
         // sets the metronome on/off
@@ -266,7 +272,7 @@ class Play extends Phaser.Scene {
         console.log(beatDiff);
 
         // health gained if perfectly on beat
-        const maxHealthGain = 15;
+        const maxHealthGain = 10;
         // ratio of how much error affects health gain
         const diffMult = 2;
         // health multiplier, min 0
@@ -274,6 +280,12 @@ class Play extends Phaser.Scene {
 
         // increment health
         this.health += maxHealthGain * healthMult;
+        // snap health to valid range
+        this.health = Math.min(this.health, this.maxHealth);
+
+        // increment score
+        Game.player.score += maxHealthGain * healthMult;
+        this.scoreLeft.text = Math.floor(Game.player.score);
 
         let det = (((-1 * beatDiff) + 0.5) * 2) * 1200;
         let sConfig = { detune: det };
@@ -403,6 +415,11 @@ class Play extends Phaser.Scene {
                 this.endSlowDownEffect();
             else
                 this.startSlowDownEffect();
+        });
+
+        this.input.keyboard.on('keydown-L', (event) => {
+            this.player.snapToLanes = !this.player.snapToLanes;
+            this.player.snapToClosestLane();
         });
     }
 }
