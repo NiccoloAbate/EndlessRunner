@@ -207,9 +207,6 @@ class Play extends Phaser.Scene {
             }
             this.lastMeasureDiff = measureDiff;
 
-            if (this.beatPos >= this.beatReset) this.beatPos -= this.beatReset;
-            if (this.measurePos >= this.measureReset) this.measurePos -= this.measureReset;
-
             // update player
             this.player.update(time, delta);
 
