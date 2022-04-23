@@ -5,8 +5,11 @@ class Play extends Phaser.Scene {
 
     preload() {
         // load images/tile sprites
-        this.load.image('player', './assets/sprites/rocket.png');
-        this.load.image('note', './assets/sprites/spaceship.png');
+        this.load.image('player', './assets/sprites/PlayerBlock.png');
+        this.load.image('note', './assets/sprites/CircleToHit.png');
+        this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
+        this.load.image('power', "./assets/sprites/TriangleCoin.png");
+        this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
         this.load.image('background0', './assets/sprites/starfield.png');
         this.load.image('background1', './assets/sprites/asteroids_big.png');
     }
@@ -34,17 +37,18 @@ class Play extends Phaser.Scene {
         // init player entity
         this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
         this.player.setOrigin(0.5, 0);
+        this.player.setScale(3.0, 1.5);
         this.player.setControls(keyLEFT, keyRIGHT);
 
         let rectColor = 0x00FF00;
         let borderColor = 0xFFFFFF;
         // green UI background
-        this.add.rectangle(0, borderUISize + borderPadding, width, borderUISize * 2, rectColor).setOrigin(0, 0);
+        this.add.rectangle(0, borderUISize + borderPadding, width, borderUISize * 2, rectColor).setOrigin(0, 0).setDepth(2);
         // white borders
-        this.add.rectangle(0, 0, width, borderUISize, borderColor).setOrigin(0, 0);
-        this.add.rectangle(0, height - borderUISize, width, borderUISize, borderColor).setOrigin(0, 0);
-        this.add.rectangle(0, 0, borderUISize, height, borderColor).setOrigin(0, 0);
-        this.add.rectangle(width - borderUISize, 0, borderUISize, height, borderColor).setOrigin(0, 0);
+        this.add.rectangle(0, 0, width, borderUISize, borderColor).setOrigin(0, 0).setDepth(2);
+        this.add.rectangle(0, height - borderUISize, width, borderUISize, borderColor).setOrigin(0, 0).setDepth(2);
+        this.add.rectangle(0, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
+        this.add.rectangle(width - borderUISize, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
         
         // display score
         this.scoreConfig = {
@@ -61,9 +65,11 @@ class Play extends Phaser.Scene {
         }
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2,
             Game.player.score, this.scoreConfig);
+        this.scoreLeft.setDepth(2);
         // display beat counter
         this.beatCounterText = this.add.text(width - borderUISize - borderPadding - this.scoreConfig.fixedWidth,
             borderUISize + borderPadding*2, 1, this.scoreConfig);
+        this.beatCounterText.setDepth(2);
 
         // init health and health counter
         this.health = 100;
@@ -83,7 +89,8 @@ class Play extends Phaser.Scene {
         this.formatHealthText = h => Math.max(Math.floor(h), 0); 
         this.healthText = this.add.text((width / 2) - (this.healthTextConfig.fixedWidth / 2),
             borderUISize + borderPadding*2, this.formatHealthText(this.timeLeft), this.healthTextConfig);
-        
+        this.healthText.setDepth(2);
+
         // GAME OVER flag
         this.gameOver = false;
 
@@ -137,7 +144,19 @@ class Play extends Phaser.Scene {
         this.metronome = false;
 
         // init effects
-        this.inEffect = false;
+        this.effects = new Array(0);
+
+        this.difficultyPatterns = [
+            [true, false, false, false],
+            [true, false, true, false],
+            [true, false, true, true],
+            [true, true, true, false],
+            [true, true, true, true]
+        ];
+        this.difficultyTimeThresholds = [7.5, 30, 60, 90, 150];
+        this.difficultyLevel = 0;
+
+        this.playTime = 0;
 
         this.createDebugKeybinds();
     }
@@ -165,10 +184,14 @@ class Play extends Phaser.Scene {
             this.health -= delta * healthSpeed;
             this.healthText.text = this.formatHealthText(this.health);
 
-            //const pitchDriftTime = 5000;
-            //let det = clamp(((pitchDriftTime - this.timeLeft) / pitchDriftTime), 0, 1) * (-1 * 1200);
-            //this.music.setGlobalConfig({detune: det});
-            
+            // difficulty level
+            this.playTime += delta;
+            if (this.difficultyLevel < this.difficultyPatterns.length - 1) {
+                let nextTreshold = this.difficultyTimeThresholds[this.difficultyLevel];
+                if ((this.playTime / UpdateTime.sRatio) > nextTreshold) {
+                    this.difficultyLevel++;
+                }
+            }            
 
             if (this.health <= 0) {
                 //this.music.setGlobalConfig({detune: 0});
@@ -191,7 +214,7 @@ class Play extends Phaser.Scene {
                 // do stuff
                 this.beatCounterText.text = Math.floor(this.beatPos + 1);
 
-                if (Math.floor(this.beatPos) % 2 == 0) {
+                if (this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)]) {
                     this.createNote();
                 }
 
@@ -231,7 +254,7 @@ class Play extends Phaser.Scene {
                     this.notes[i].destroy();
                     this.notes.splice(i, 1); // remove the note
 
-                    const healthLoss = 5;
+                    const healthLoss = 15;
                     this.health -= healthLoss;
                 }
                 else {
@@ -287,13 +310,30 @@ class Play extends Phaser.Scene {
         let det = (((-1 * beatDiff) + 0.5) * 2) * 1200;
         let sConfig = { detune: det };
         this.sound.play('menu_select', sConfig);
+
+        if (note.type == 'slowPower') {
+            this.startSlowDownEffect();
+        }
     }
 
     createNote() {
+        let type;
+        let spriteName;
+        // could add more note types
+        if (Math.random() < 0.025) {
+            type = 'slowPower';
+            spriteName = 'power';
+        }
+        else {
+            type = 'note';
+            spriteName = 'note';
+        }
+
         let x = this.lanes[getRandomInt(0, this.lanes.length)].x;
-        let newNote = new Note(this, x, 0, 'note');
+        let newNote = new Note(this, x, 0, spriteName);
         newNote.setOrigin(0.5, 0.5);
-        newNote.setScale(1, 1.5);
+        newNote.setScale(3.0, 3.0);
+        newNote.type = type;
 
         newNote.speed = this.computeNoteSpeed();
 
@@ -340,9 +380,16 @@ class Play extends Phaser.Scene {
     }
 
     updateSlowEffect(delta) {
+        if (this.slow) {
+            this.slowEffectTime += delta;
+            if (this.slowEffectTime / UpdateTime.sRatio >= this.slowEffectLength) {
+                this.endSlowDownEffect();
+            }
+        }
+
         if (!this.speedTransition) return;
 
-        const effectRampTime = 0.35; // second
+        const effectRampTime = 0.5; // second
         this.speedTransitionTime += delta;
 
         let effectPos = Math.min(1, (this.speedTransitionTime / UpdateTime.sRatio) / effectRampTime);
@@ -357,7 +404,6 @@ class Play extends Phaser.Scene {
         
         if (effectPos == 1) {
             this.speedTransition = false;
-            this.inEffect = false; // this is the only effect right now...
         }
 
         // −12log2(t1/t2) where t1 = tempo before change and t2 = tempo after change
@@ -367,28 +413,16 @@ class Play extends Phaser.Scene {
         this.notes.forEach(n => n.speed = this.computeNoteSpeed());
     }
     startSlowDownEffect() {
-        //this.currentTrackInfo.BPM = this.currentTrackDefaultInfo.BPM / 2;
-        //this.currentTrack.setGlobalConfig( {detune : -1200} );
-
         this.slow = !this.slow;
         this.speedTransition = true;
-        this.inEffect = true;
         this.speedTransitionTime = 0;
-
-        //this.notes.forEach(n => n.speed = this.computeNoteSpeed());
-        this.destroyAllNotes();
+        this.slowEffectLength = 5; // s
+        this.slowEffectTime = 0;
     }
     endSlowDownEffect() {
-        //this.currentTrackInfo.BPM = this.currentTrackDefaultInfo.BPM;
-        //this.currentTrack.setGlobalConfig( {detune : 0} );
-
         this.slow = !this.slow;
         this.speedTransition = true;
-        this.inEffect = true;
         this.speedTransitionTime = 0;
-
-        //this.notes.forEach(n => n.speed = this.computeNoteSpeed());
-        this.destroyAllNotes();
     }
 
     destroyAllNotes() {
