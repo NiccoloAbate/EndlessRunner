@@ -1,8 +1,10 @@
 
 let config = {
     type: Phaser.CANVAS,
-    width: 640,
-    height: 480,
+
+    //Game Canvas scales with width and height of window
+    width: window.innerWidth * window.devicePixelRatio * 0.75,
+    height: window.innerHeight * window.devicePixelRatio,
     scene: [Menu, Play]
 }
 

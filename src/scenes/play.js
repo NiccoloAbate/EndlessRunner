@@ -10,7 +10,7 @@ class Play extends Phaser.Scene {
         this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
         this.load.image('power', "./assets/sprites/TriangleCoin.png");
         this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
-        this.load.image('background0', './assets/sprites/starfield.png');
+        this.load.image('background0', './assets/sprites/Endless_Runner_Background.png');
         this.load.image('background1', './assets/sprites/asteroids_big.png');
     }
 
@@ -37,11 +37,14 @@ class Play extends Phaser.Scene {
         // init player entity
         this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
         this.player.setOrigin(0.5, 0);
-        this.player.setScale(3.0, 1.5);
+        this.player.setScale(width/150, height/500);
         this.player.setControls(keyLEFT, keyRIGHT);
+        
 
         let rectColor = 0x00FF00;
         let borderColor = 0xFFFFFF;
+
+        /*
         // green UI background
         this.add.rectangle(0, borderUISize + borderPadding, width, borderUISize * 2, rectColor).setOrigin(0, 0).setDepth(2);
         // white borders
@@ -49,7 +52,9 @@ class Play extends Phaser.Scene {
         this.add.rectangle(0, height - borderUISize, width, borderUISize, borderColor).setOrigin(0, 0).setDepth(2);
         this.add.rectangle(0, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
         this.add.rectangle(width - borderUISize, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
-        
+        */
+
+
         // display score
         this.scoreConfig = {
             fontFamily: 'Courier',
@@ -147,13 +152,14 @@ class Play extends Phaser.Scene {
         this.effects = new Array(0);
 
         this.difficultyPatterns = [
+            [false, false, false, false],
             [true, false, false, false],
             [true, false, true, false],
             [true, false, true, true],
             [true, true, true, false],
             [true, true, true, true]
         ];
-        this.difficultyTimeThresholds = [7.5, 30, 60, 90, 150];
+        this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 150];
         this.difficultyLevel = 0;
 
         this.playTime = 0;
@@ -289,7 +295,7 @@ class Play extends Phaser.Scene {
         let beatDiff = Math.min(this.beatPos - Math.floor(this.beatPos),
             Math.ceil(this.beatPos) - this.beatPos);
         
-        console.log(beatDiff);
+        //console.log(beatDiff);
 
         // health gained if perfectly on beat
         const maxHealthGain = 10;
@@ -298,8 +304,11 @@ class Play extends Phaser.Scene {
         // health multiplier, min 0
         let healthMult = Math.max(1 - (beatDiff * diffMult), 0);
 
+        
         // increment health
-        this.health += maxHealthGain * healthMult;
+        this.health += maxHealthGain * healthMult / this.difficultyLevel * 1.5;
+        console.log(maxHealthGain * healthMult / this.difficultyLevel * 1.5);
+
         // snap health to valid range
         this.health = Math.min(this.health, this.maxHealth);
 
@@ -451,6 +460,41 @@ class Play extends Phaser.Scene {
         this.input.keyboard.on('keydown-L', (event) => {
             this.player.snapToLanes = !this.player.snapToLanes;
             this.player.snapToClosestLane();
+        });
+        
+
+        //difficulty level shortcuts
+        //  this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 150];
+        this.input.keyboard.on('keydown-ONE', (event) => {
+            this.playTime = 7500;
+            this.difficultyLevel = 1;
+            console.log(this.difficultyLevel);
+        });
+
+        this.input.keyboard.on('keydown-TWO', (event) => {
+            this.playTime = 30000;
+            this.difficultyLevel = 2;
+            console.log(this.difficultyLevel);
+        });
+        this.input.keyboard.on('keydown-THREE', (event) => {
+            this.playTime = 60000;
+            this.difficultyLevel = 3;
+            console.log(this.difficultyLevel);
+        });
+        this.input.keyboard.on('keydown-FOUR', (event) => {
+            this.playTime = 90000;
+            this.difficultyLevel = 4;
+            console.log(this.difficultyLevel);
+        });
+        this.input.keyboard.on('keydown-FIVE', (event) => {
+            this.playTime = 150000;
+            this.difficultyLevel = 5;
+            console.log(this.difficultyLevel);
+        });
+        this.input.keyboard.on('keydown-ZERO', (event) => {
+            this.playTime = 0;
+            this.difficultyLevel = 0;
+            console.log(this.difficultyLevel);
         });
     }
 }
