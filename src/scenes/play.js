@@ -10,8 +10,8 @@ class Play extends Phaser.Scene {
         this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
         this.load.image('power', "./assets/sprites/TriangleCoin.png");
         this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
-        this.load.image('background0', './assets/sprites/Endless_Runner_Background.png');
-        this.load.image('background1', './assets/sprites/asteroids_big.png');
+        this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
+        //this.load.image('background1', './assets/sprites/asteroids_big.png');
     }
 
     create() {
@@ -22,9 +22,13 @@ class Play extends Phaser.Scene {
         this.defineKeys();
 
         // init background
-        this.backgrounds = new Array(2);
+        this.backgrounds = new Array(1);
         this.backgrounds[0] = this.add.tileSprite(0, 0, width, height, 'background0').setOrigin(0, 0);
-        this.backgrounds[1] = this.add.tileSprite(0, 0, width, height, 'background1').setOrigin(0, 0);
+        // manually adjust background size
+        this.backgrounds[0].displayWidth = Game.config.width;
+        this.backgrounds[0].displayHeight = Game.config.height;
+        //this.backgrounds[1] = this.add.tileSprite(0, 0, width, height, 'background1').setOrigin(0, 0);
+        this.backgrounds.forEach(b => b.setDepth(-2));
         this.backgroundScrollSpeeds = new Array(2);
         this.backgroundScrollSpeeds[0] = 4;
         this.backgroundScrollSpeeds[1] = 1;
@@ -132,7 +136,38 @@ class Play extends Phaser.Scene {
         this.notes = new Array(0);
 
         // init lanes
-        const nLanes = 3;
+        this.initLanes(3);
+        this.maxNumLanes = 4;
+
+        // sets the metronome on/off
+        this.metronome = false;
+
+        // init effects
+        this.effects = new Array(0);
+
+        this.difficultyPatterns = [
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+            [1, 0, 1, 0],
+            [1, 0, 1, 1],
+            [1, 1, 1, 0],
+            [1, 1, 1, 1]
+        ];
+        // no 8th note difficulty -- could be [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5] if implemented
+        this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 150];
+        this.difficultyLevel = 0;
+
+        this.playTime = 0;
+
+        this.trackSwitchTime = 150;
+        this.readyToSwitchTracks = false;
+        this.tracksCompleted = 0;
+
+        this.createDebugKeybinds();
+    }
+
+    initLanes(nLanes) {
+        // init lanes
         this.lanes = new Array(3);
         for (let i = 0; i < nLanes; ++i) {
             this.lanes[i] = {};
@@ -144,27 +179,6 @@ class Play extends Phaser.Scene {
         if (this.player.snapToLanes) {
             this.player.snapToClosestLane();
         }
-
-        // sets the metronome on/off
-        this.metronome = false;
-
-        // init effects
-        this.effects = new Array(0);
-
-        this.difficultyPatterns = [
-            [false, false, false, false],
-            [true, false, false, false],
-            [true, false, true, false],
-            [true, false, true, true],
-            [true, true, true, false],
-            [true, true, true, true]
-        ];
-        this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 150];
-        this.difficultyLevel = 0;
-
-        this.playTime = 0;
-
-        this.createDebugKeybinds();
     }
 
     update(time, delta) {
@@ -186,18 +200,26 @@ class Play extends Phaser.Scene {
 
         if (!this.gameOver) {
             // update health
+            // slowdown ratio
             const healthSpeed = 5 / UpdateTime.sRatio; // 5 per second
-            this.health -= delta * healthSpeed;
+            let BPMRatio = this.currentTrackInfo.BPM / this.currentTrackDefaultInfo.BPM;
+            this.health -= delta * healthSpeed * BPMRatio;
             this.healthText.text = this.formatHealthText(this.health);
 
-            // difficulty level
             this.playTime += delta;
+
+            // difficulty level
             if (this.difficultyLevel < this.difficultyPatterns.length - 1) {
                 let nextTreshold = this.difficultyTimeThresholds[this.difficultyLevel];
                 if ((this.playTime / UpdateTime.sRatio) > nextTreshold) {
                     this.difficultyLevel++;
                 }
             }            
+
+            if ((this.playTime / UpdateTime.sRatio) > this.trackSwitchTime) {
+                // time to initiate switch track
+                this.readyToSwitchTracks = true;
+            }
 
             if (this.health <= 0) {
                 //this.music.setGlobalConfig({detune: 0});
@@ -220,7 +242,8 @@ class Play extends Phaser.Scene {
                 // do stuff
                 this.beatCounterText.text = Math.floor(this.beatPos + 1);
 
-                if (this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)]) {
+                let notePercent = this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)];
+                if (Math.random() < notePercent) {
                     this.createNote();
                 }
 
@@ -233,6 +256,27 @@ class Play extends Phaser.Scene {
                 // measure just completed
 
                 // do stuff
+                if (this.readyToSwitchTracks) {
+                    this.readyToSwitchTracks = false;
+                    // for now just do this to switch, should do some sort of fade out/in...
+                    // reset old track
+                    this.currentTrack.pause();
+                    this.currentTrack.setGlobalConfig({seek : 0});
+                    // get random new track
+                    this.chooseRandomDifferentTrack();
+                    // play random new track
+                    this.currentTrack.play();
+                    // reset playtime and difficulty -- something better should be here
+                    this.playTime = 0;
+                    this.difficultyLevel = 0;
+                    ++this.tracksCompleted;
+                    // increase lanes every 2 tracks, might get out of hand but would take a while
+                    if (this.tracksCompleted % 2 == 0) {
+                        this.initLanes(Math.min(this.lanes.length + 1, this.maxNumLanes));
+                    }
+                    
+                    this.destroyAllNotes();
+                }
             }
             this.lastMeasureDiff = measureDiff;
 
@@ -257,11 +301,9 @@ class Play extends Phaser.Scene {
             // check notes off screen
             for (let i = 0; i < this.notes.length; ) {
                 if (this.notes[i].offScreen()) {
+                    this.noteMissed(this.notes[i]);
                     this.notes[i].destroy();
                     this.notes.splice(i, 1); // remove the note
-
-                    const healthLoss = 15;
-                    this.health -= healthLoss;
                 }
                 else {
                     ++i;
@@ -290,7 +332,34 @@ class Play extends Phaser.Scene {
         return Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2);
     }
 
+    noteMissed(note) {
+        if (note.type == 'note') {
+            this.normalNoteMissed(note);
+        }
+        else if (note.type == 'slowPower') {
+            this.normalNoteMissed(note);
+        }
+        else if (note.type == 'obstacle') {
+            // nothing happens
+        }
+    }
+    normalNoteMissed(note) {
+        const healthLoss = 15;
+        this.health -= healthLoss;
+    }
+
     noteHit(note) {
+        if (note.type == 'note') {
+            this.normalNoteHit(note);
+        }
+        else if (note.type == 'slowPower') {
+            this.slowPowerHit(note);
+        }
+        else if (note.type == 'obstacle') {
+            this.obstacleHit(note);
+        }
+    }
+    normalNoteHit(note) {
         // the amount of error from beat
         let beatDiff = Math.min(this.beatPos - Math.floor(this.beatPos),
             Math.ceil(this.beatPos) - this.beatPos);
@@ -319,23 +388,36 @@ class Play extends Phaser.Scene {
         let det = (((-1 * beatDiff) + 0.5) * 2) * 1200;
         let sConfig = { detune: det };
         this.sound.play('menu_select', sConfig);
+    }
+    slowPowerHit(note) {
+        this.normalNoteHit(note);
 
-        if (note.type == 'slowPower') {
-            this.startSlowDownEffect();
-        }
+        this.startSlowDownEffect();
+    }
+    obstacleHit(note) {
+        const healthLoss = 15;
+        this.health -= healthLoss;
+
+        let sConfig = { detune: -1200, volume: 0.75 };
+        this.sound.play('menu_select', sConfig);
     }
 
     createNote() {
         let type;
         let spriteName;
         // could add more note types
-        if (Math.random() < 0.025) {
-            type = 'slowPower';
+        let noteTypes = ['note', 'slowPower', 'obstacle'];
+        let typeWeights = [0.95, 0.025, 0.025];
+        type = randomChoiceWeighted(noteTypes, typeWeights);
+
+        if (type == 'note') {
+            spriteName = 'note';
+        }
+        else if (type == 'slowPower') {
             spriteName = 'power';
         }
-        else {
-            type = 'note';
-            spriteName = 'note';
+        else if (type == 'obstacle') {
+            spriteName = 'obstacle';
         }
 
         let x = this.lanes[getRandomInt(0, this.lanes.length)].x;
@@ -372,10 +454,23 @@ class Play extends Phaser.Scene {
     }
 
     chooseRandomTrack() {
-        let nTracks = this.trackVarNames.length;
         let ind = getRandomInt(0, this.trackVarNames.length);
         let trackVarName = this.trackVarNames[ind];
 
+        this.currentTrackVarName = trackVarName;
+        this.currentTrack = this[trackVarName];
+        this.currentTrackDefaultInfo = this[trackVarName + 'Info'];
+        // deep clone of object
+        this.currentTrackInfo = JSON.parse(JSON.stringify(this.currentTrackDefaultInfo));
+    }
+
+    chooseRandomDifferentTrack() {
+        let clippedTracks = [...this.trackVarNames];
+        clippedTracks.splice(clippedTracks.indexOf(this.currentTrackVarName), 1);
+        let ind = getRandomInt(0, clippedTracks.length);
+        let trackVarName = clippedTracks[ind];
+
+        this.currentTrackVarName = trackVarName;
         this.currentTrack = this[trackVarName];
         this.currentTrackDefaultInfo = this[trackVarName + 'Info'];
         // deep clone of object

@@ -11,6 +11,9 @@ function applyConfigToSound(sound, config) {
     if (config.detune != undefined) {
         sound.setDetune(config.detune);
     }
+    if (config.seek != undefined) {
+        sound.setSeek(config.seek);
+    }
 }
 
 class AudioMultiTrack {
@@ -38,6 +41,10 @@ class AudioMultiTrack {
                 this.stems[i].play();
             }
         }
+    }
+
+    pause() {
+        this.stems.forEach(s => s.pause());
     }
 
     destroy() {

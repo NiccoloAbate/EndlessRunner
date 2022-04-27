@@ -23,6 +23,33 @@ function lerp(min, max, pos) {
   return ((max - min) * pos) + min;
 }
 
+// based on answer in forum:
+// https://stackoverflow.com/questions/43566019/how-to-choose-a-weighted-random-array-element-in-javascript
+function randomChoiceWeighted(items, weights) {
+  let i;
+
+  for (i = 0; i < weights.length; i++)
+      weights[i] += weights[i - 1] || 0;
+  
+  let random = Math.random() * weights[weights.length - 1];
+  
+  for (i = 0; i < weights.length; i++)
+    if (weights[i] > random)
+      break;
+  
+  return items[i];
+}
+
+function average(arr) {
+  if (arr.length == 0) {
+    return 0;
+  }
+  
+  let sum = 0;
+  arr.forEach(x => sum += x);
+  return sum / arr.length;
+}
+
 let UpdateTime = {
     sRatio: 1000,
     msRatio: 1,

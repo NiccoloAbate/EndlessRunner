@@ -4,9 +4,17 @@ class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, texture) {
         super(scene, x, y, texture);
 
+        this.scene = scene;
+        this.texture = texture;
+
         this.snapToLanes = false;
         this.lanes = [];
         this.laneIndex = 0;
+
+        this.timeSinceLastShadow = 0;
+        this.lastShadowPositions = [];
+        this.maxNumShadows = 8;
+        this.timeBetweenShadows = 50;
 
         this.reset();
 
@@ -22,7 +30,20 @@ class Player extends Phaser.GameObjects.Sprite {
         }
         else {
             this.updateMoveSmooth(delta);    
-        }    
+        }
+
+        this.timeSinceLastShadow += delta;
+        if (this.timeSinceLastShadow >= this.timeBetweenShadows) {
+            this.timeSinceLastShadow -= this.timeBetweenShadows;
+
+            this.lastShadowPositions.push(this.x);
+            if (this.lastShadowPositions.length > this.maxNumShadows) {
+                this.lastShadowPositions.splice(0, 1);
+            }
+
+            this.spawnShadow();
+        }
+
     }
 
     updateMoveSmooth(delta) {
@@ -63,5 +84,27 @@ class Player extends Phaser.GameObjects.Sprite {
     setControls(left, right) {
         this.keyLeft = left;
         this.keyRight = right;
+    }
+
+    // adapted from paddle parkour
+    spawnShadow() {
+        let shadow = this.scene.add.image(average(this.lastShadowPositions), this.y, this.texture).setOrigin(0.5, 0);
+        shadow.scaleY = this.scaleY;            // scale to parent paddle
+        shadow.scaleX = this.scaleX;
+        shadow.tint = Math.random() * 0xFFFFFF;   // tint w/ rainbow colors
+        shadow.alpha = 0.5;                       // make semi-transparent
+        shadow.setDepth(-1);
+        let shadowDuration = 500;
+        // tween shadow paddle alpha to 0
+        this.scene.tweens.add({ 
+            targets: shadow, 
+            alpha: { from: 0.5, to: 0 },
+            scaleY: { from: this.scaleY, to: 0},
+            duration: shadowDuration,
+            ease: 'Linear',
+            repeat: 0 
+        });
+        // set a kill timer for trail effect
+        this.scene.time.delayedCall(shadowDuration, () => { shadow.destroy(); } );
     }
 }
