@@ -57,6 +57,22 @@ class Menu extends Phaser.Scene {
         this.player.setControls(keyLEFT, keyRIGHT);
 
         this.initLanes(3);
+
+        this.player.keyRight.on("down", () => {
+            // will be moving into left
+            if (this.player.laneIndex == 1) {
+                // something happens on the left
+                // credits or optoins or something
+            }
+        });
+        this.player.keyRight.on("down", () => {
+            // will be moving into right
+            if (this.player.laneIndex == this.player.lanes.length - 2) {
+                // something happens on the right
+                this.sound.play('menu_select');
+                this.time.delayedCall(500, () => this.startGame());
+            }
+        });
     }
 
     update(time, delta) {
@@ -64,9 +80,13 @@ class Menu extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(keyENTER)) {
             this.sound.play('menu_select');
-            Game.scene.start('play');
-            Game.scene.remove('menu');
+            this.startGame();
         }
+    }
+
+    startGame() {
+        Game.scene.start('play');
+        Game.scene.remove('menu');
     }
 
     defineKeys() {
