@@ -17,8 +17,10 @@ class Menu extends Phaser.Scene {
         this.load.image('note', './assets/sprites/CircleToHit.png');
         this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
         this.load.image('power', "./assets/sprites/TriangleCoin.png");
-        this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
+        this.load.image('leftArrowNote', "./assets/sprites/hitToGoToNextLane.png");
         this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
+        this.load.image('leftArrow', './assets/sprites/LeftArrow.png');
+        this.load.image('rightArrow', './assets/sprites/RightArrow.png');
 
         // menu text config
         this.menuConfig = {

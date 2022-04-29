@@ -156,7 +156,18 @@ class Play extends Phaser.Scene {
         this.readyToSwitchTracks = false;
         this.tracksCompleted = 0;
 
+        this.tutorialSequence = [
+            { beat: 4, chance: 1, type: 'note' },
+            { beat: 8, chance: 1, type: 'obstacle' },
+            { beat: 12, chance: 1, type: 'slowPower' },
+            { beat: 14, chance: 1, type: 'END'}
+        ]
+        this.currentSequence = this.tutorialSequence;
+        this.currentSequenceIndex = 0;
+
         this.createDebugKeybinds();
+
+        this.flashArrows();
     }
 
     initLanes(nLanes) {
@@ -222,10 +233,10 @@ class Play extends Phaser.Scene {
             // compute beat and measure time using actual track time
             // BPM remains default even when shifted because of some Phaser audio oddity
             let useBPM = this.currentTrackDefaultInfo.BPM;
-            this.beatPos = this.currentTrack.stems[0].seek * (1 / 60) * useBPM;
-            this.measurePos = this.beatPos / this.currentTrackInfo.measureSig;
-            this.beatPos %= this.beatReset;
-            this.measurePos %= this.measureReset;
+            this.totalBeatPos = this.currentTrack.stems[0].seek * (1 / 60) * useBPM;
+            this.totalMeasurePos = this.beatPos / this.currentTrackInfo.measureSig;
+            this.beatPos = this.totalBeatPos % this.beatReset;
+            this.measurePos = this.totalMeasurePos % this.measureReset;
 
 
             let beatDiff = this.beatPos - Math.floor(this.beatPos);
@@ -235,9 +246,31 @@ class Play extends Phaser.Scene {
                 // do stuff
                 this.beatCounterText.text = Math.floor(this.beatPos + 1);
 
-                let notePercent = this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)];
-                if (Math.random() < notePercent) {
-                    this.createNote();
+                if (this.currentSequence != undefined) {
+                    // read notes from sequence
+                    let currentSequenceNode = this.currentSequence[this.currentSequenceIndex];
+                    if (this.totalBeatPos >= currentSequenceNode.beat) {
+                        if (currentSequenceNode.type == 'END') {
+                            // end sequence
+                            this.currentSequence = undefined;
+                            this.currentSequenceIndex = 0;
+                        }
+                        else {
+                            // note in sequence
+                            if (Math.random() < currentSequenceNode.chance) {
+                                this.createNote(currentSequenceNode.type);
+                            }
+
+                            ++this.currentSequenceIndex;
+                        }
+                    }
+                }
+                else {
+                    // random notes from difficulty pattern
+                    let notePercent = this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)];
+                    if (Math.random() < notePercent) {
+                        this.createNote();
+                    }
                 }
 
                 if (this.metronome)
@@ -305,6 +338,33 @@ class Play extends Phaser.Scene {
         }
 
         this.updateEffects(delta);
+    }
+
+    flashArrows() {
+        let leftArrow = this.add.image(this.lanes[0].x, Game.config.height / 2, 'leftArrow');
+        leftArrow.setOrigin(0.5, 0.5);
+        let rightArrow = this.add.image(this.lanes[this.lanes.length - 1].x, Game.config.height / 2, 'rightArrow');
+        rightArrow.setOrigin(0.5, 0.5);
+
+        const flashDuration = 2 * UpdateTime.sRatio;
+        this.tweens.add({ 
+            targets: leftArrow, 
+            scaleX: { from: 5, to: 0 },
+            scaleY: { from: 5, to: 0},
+            duration: flashDuration,
+            ease: 'Linear',
+            repeat: 0
+        });
+        this.time.delayedCall(flashDuration, () => leftArrow.destroy());
+        this.tweens.add({ 
+            targets: rightArrow, 
+            scaleX: { from: 5, to: 0 },
+            scaleY: { from: 5, to: 0},
+            duration: flashDuration,
+            ease: 'Linear',
+            repeat: 0
+        });
+        this.time.delayedCall(flashDuration, () => rightArrow.destroy());
     }
 
     defineKeys() {
@@ -395,13 +455,15 @@ class Play extends Phaser.Scene {
         this.sound.play('menu_select', sConfig);
     }
 
-    createNote() {
-        let type;
+    createNote(type) {
         let spriteName;
-        // could add more note types
-        let noteTypes = ['note', 'slowPower', 'obstacle'];
-        let typeWeights = [0.95, 0.025, 0.025];
-        type = randomChoiceWeighted(noteTypes, typeWeights);
+        
+        if (type == undefined) {
+            // could add more note types
+            let noteTypes = ['note', 'slowPower', 'obstacle'];
+            let typeWeights = [0.95, 0.025, 0.025];
+            type = randomChoiceWeighted(noteTypes, typeWeights);
+        }
 
         if (type == 'note') {
             spriteName = 'note';
