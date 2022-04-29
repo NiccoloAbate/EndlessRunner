@@ -12,6 +12,14 @@ class Menu extends Phaser.Scene {
         Audio.preloadMulti(this, 'testTrack0', testTrack0StemFileNames, testTrack0StemNames);
         Audio.preloadMulti(this, 'testTrack1', testTrack1StemFileNames, testTrack1StemNames);
 
+        // load images/tile sprites
+        this.load.image('player', './assets/sprites/PlayerBlock.png');
+        this.load.image('note', './assets/sprites/CircleToHit.png');
+        this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
+        this.load.image('power', "./assets/sprites/TriangleCoin.png");
+        this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
+        this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
+
         // menu text config
         this.menuConfig = {
             fontFamily: 'Courier',
@@ -37,13 +45,23 @@ class Menu extends Phaser.Scene {
 
         this.loadingText.destroy();
 
+        this.defineKeys();
+
         this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
         'Press Enter to Begin', this.menuConfig).setOrigin(0.5);
 
-        this.defineKeys();
+        // init player entity
+        this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
+        this.player.setOrigin(0.5, 0);
+        this.player.setScale(width/150, height/500);
+        this.player.setControls(keyLEFT, keyRIGHT);
+
+        this.initLanes(3);
     }
 
-    update() {
+    update(time, delta) {
+        this.player.update(time, delta);
+
         if (Phaser.Input.Keyboard.JustDown(keyENTER)) {
             this.sound.play('menu_select');
             Game.scene.start('play');
@@ -52,6 +70,25 @@ class Menu extends Phaser.Scene {
     }
 
     defineKeys() {
+        keyLEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+        keyRIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+        keyUP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+        keyDOWN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
         keyENTER = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    }
+
+    initLanes(nLanes) {
+        // init lanes
+        this.lanes = new Array(3);
+        for (let i = 0; i < nLanes; ++i) {
+            this.lanes[i] = {};
+            // spread the lanes evenly across the width
+            this.lanes[i].x = (Game.config.width / (nLanes + 1)) * (i + 1);
+        }
+        this.player.lanes = this.lanes;
+        this.player.snapToLanes = true;
+        if (this.player.snapToLanes) {
+            this.player.snapToClosestLane();
+        }
     }
 }

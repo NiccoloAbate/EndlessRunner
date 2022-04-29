@@ -4,14 +4,7 @@ class Play extends Phaser.Scene {
     }
 
     preload() {
-        // load images/tile sprites
-        this.load.image('player', './assets/sprites/PlayerBlock.png');
-        this.load.image('note', './assets/sprites/CircleToHit.png');
-        this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
-        this.load.image('power', "./assets/sprites/TriangleCoin.png");
-        this.load.image('arrow', "./assets/sprites/hitToGoToNextLane.png");
-        this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
-        //this.load.image('background1', './assets/sprites/asteroids_big.png');
+        
     }
 
     create() {
