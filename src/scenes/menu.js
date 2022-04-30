@@ -9,8 +9,10 @@ class Menu extends Phaser.Scene {
 
         // load audio
         this.load.audio('menu_select', 'assets/sfx/blip_select12.wav');
-        Audio.preloadMulti(this, 'testTrack0', testTrack0StemFileNames, testTrack0StemNames);
-        Audio.preloadMulti(this, 'testTrack1', testTrack1StemFileNames, testTrack1StemNames);
+        Audio.preloadMulti(this, 'Track0', Track0StemFileNames, Track0StemNames);
+        Audio.preloadMulti(this, 'Track1', Track1StemFileNames, Track1StemNames);
+        Audio.preloadMulti(this, 'Track2', Track2StemFileNames, Track2StemNames);
+        Audio.preloadMulti(this, 'Track3', Track3StemFileNames, Track3StemNames);
 
         // load images/tile sprites
         this.load.image('player', './assets/sprites/PlayerBlock.png');

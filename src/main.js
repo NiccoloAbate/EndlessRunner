@@ -14,18 +14,32 @@ let borderPadding = borderUISize / 3;
 let Game = new Phaser.Game(config);
 
 let Audio = new AudioManager;
-let testTrack0StemNames = ['Drums', 'Rhythm', 'Synth 1', 'Synth 2'];
-let testTrack0StemFileNames = ['assets/music/Test Track 1 - Drums.wav', 'assets/music/Test Track 1 - Rhythm.wav',
-    'assets/music/Test Track 1 - Synth 1.wav', 'assets/music/Test Track 1 - Synth 2.wav'];
-let testTrack0Info = {
+let Track0StemNames = ['Drums', 'Rhythm', 'Synth 1', 'Bass'];
+let Track0StemFileNames = ['assets/music/Track 1 - Drums.wav', 'assets/music/Track 1 - Rhythm.wav',
+    'assets/music/Track 1 - Synth 1.wav', 'assets/music/Track 1 - Bass.wav'];
+let Track0Info = {
     BPM : 135,
     measureSig : 4,
 }
-let testTrack1StemNames = ['Drums', 'Synth 1', 'Bass'];
-let testTrack1StemFileNames = ['assets/music/Test Track 2 - Drums.wav',
-    'assets/music/Test Track 2 - Synth 1.wav', 'assets/music/Test Track 2 - Bass.wav'];
-let testTrack1Info = {
+let Track1StemNames = ['Drums', 'Synth 1', 'Bass'];
+let Track1StemFileNames = ['assets/music/Track 2 - Drums.wav',
+    'assets/music/Track 2 - Synth 1.wav', 'assets/music/Track 2 - Bass.wav'];
+let Track1Info = {
     BPM : 140,
+    measureSig : 4,
+}
+let Track2StemNames = ['Drums', 'Rhythm', 'Bass'];
+let Track2StemFileNames = ['assets/music/Track 3 - Drums.wav',
+    'assets/music/Track 3 - Rhythm.wav', 'assets/music/Track 3 - Bass.wav'];
+let Track2Info = {
+    BPM : 130,
+    measureSig : 4,
+}
+let Track3StemNames = ['Drums', 'Synth 1', 'Bass'];
+let Track3StemFileNames = ['assets/music/Track 4 - Drums.wav',
+    'assets/music/Track 4 - Synth 1.wav', 'assets/music/Track 4 - Bass.wav'];
+let Track3Info = {
+    BPM : 135,
     measureSig : 4,
 }
 

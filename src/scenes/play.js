@@ -97,15 +97,23 @@ class Play extends Phaser.Scene {
         this.gameOver = false;
 
         // add tracks
-        this.testTrack0 = Audio.addMulti(this, 'testTrack0');
-        this.testTrack0.setGlobalConfig({loop: true});
-        this.testTrack0Info = testTrack0Info;
+        this.Track0 = Audio.addMulti(this, 'Track0');
+        this.Track0.setGlobalConfig({loop: true});
+        this.Track0Info = Track0Info;
 
-        this.testTrack1 = Audio.addMulti(this, 'testTrack1');
-        this.testTrack1.setGlobalConfig({loop: true});
-        this.testTrack1Info = testTrack1Info;
+        this.Track1 = Audio.addMulti(this, 'Track1');
+        this.Track1.setGlobalConfig({loop: true});
+        this.Track1Info = Track1Info;
 
-        this.trackVarNames = ['testTrack0', 'testTrack1'];
+        this.Track2 = Audio.addMulti(this, 'Track2');
+        this.Track2.setGlobalConfig({loop: true});
+        this.Track2Info = Track2Info;
+
+        this.Track3 = Audio.addMulti(this, 'Track3');
+        this.Track3.setGlobalConfig({loop: true});
+        this.Track3Info = Track3Info;
+
+        this.trackVarNames = ['Track0', 'Track1', 'Track2', 'Track3'];
 
         // current track
         this.chooseRandomTrack();
