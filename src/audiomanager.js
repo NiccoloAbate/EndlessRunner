@@ -1,4 +1,7 @@
 function applyConfigToSound(sound, config) {
+    if (sound == undefined) {
+        return;
+    }
     if (config.loop != undefined) {
         sound.setLoop(config.loop);
     }

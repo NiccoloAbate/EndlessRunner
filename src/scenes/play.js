@@ -93,6 +93,20 @@ class Play extends Phaser.Scene {
             borderUISize + borderPadding*2, this.formatHealthText(this.timeLeft), this.healthTextConfig);
         this.healthText.setDepth(2);
 
+        // menu text config
+        this.menuConfig = {
+            fontFamily: 'Courier',
+            fontSize: '28px',
+            backgroundColor: '#FFFFFF',
+            color: '#000000',
+            align: 'right',
+            padding: {
+            top: 5,
+            bottom: 5,
+            },
+            fixedWidth: 0
+        }
+
         // GAME OVER flag
         this.gameOver = false;
 
@@ -198,11 +212,8 @@ class Play extends Phaser.Scene {
     update(time, delta) {
         // check key input for restart
         if (this.gameOver) {
-            //this.sound.play('sfx_select');
-            //this.music.destroy();
             if (Phaser.Input.Keyboard.JustDown(keyENTER)) {
-                this.currentTrack.destroy();
-                this.scene.restart();
+                //this.restart();
             }
         }
 
@@ -238,6 +249,7 @@ class Play extends Phaser.Scene {
             if (this.health <= 0) {
                 //this.music.setGlobalConfig({detune: 0});
                 this.outOfHealth();
+                return;
             }
 
             // compute beat and measure time using actual track time
@@ -399,6 +411,17 @@ class Play extends Phaser.Scene {
         this.time.delayedCall(flashDuration, () => rightArrow.destroy());
     }
 
+    restart() {
+        this.currentTrack.destroy();
+        this.scene.restart();
+    }
+
+    stop() {
+        this.currentTrack.pause();
+        this.currentTrack.setGlobalConfig({seek : 0});
+        this.scene.stop();
+    }
+
     defineKeys() {
         keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -541,14 +564,14 @@ class Play extends Phaser.Scene {
     }
 
     outOfHealth() {
-        let width = Game.config.width;
-        let height = Game.config.height;
-        this.add.text(width/2, height/2, 'GAME OVER', this.scoreConfig).setOrigin(0.5);
-        //this.add.text(width/2, height/2 + 64, 'Press (R) to Restart or <- for Menu',
-        //    this.scoreConfig).setOrigin(0.5);
+        this.gameOverMenu();
         this.gameOver = true;
         this.currentTrack.setConfig('Synth 1', {mute : true});
         this.currentTrack.setConfig('Drums', {mute : true});
+    }
+    gameOverMenu() {
+        this.player.destroy();
+        Game.scene.start('gameover');
     }
 
     chooseRandomTrack() {

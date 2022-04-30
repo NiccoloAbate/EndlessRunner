@@ -86,7 +86,7 @@ class Menu extends Phaser.Scene {
         });
         this.player.keyRight.on("down", () => {
             // will be moving into center
-            
+            if (this.player.laneIndex == 0) {
                 // normal start Text
                 this.creditText.destroy();
                 this.creditText2.destroy();
@@ -96,7 +96,7 @@ class Menu extends Phaser.Scene {
 
                 this.startText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
                 ' Press Enter to Begin ', this.menuConfig).setOrigin(0.5);
-            
+            }
         });
         this.player.keyRight.on("down", () => {
             // will be moving into right
@@ -137,19 +137,15 @@ class Menu extends Phaser.Scene {
         this.player.update(time, delta);
 
         if (Phaser.Input.Keyboard.JustDown(keyENTER)) {
-            this.sound.play('menu_select');
-            this.startGame();
+            if (this.player.laneIndex == 1) {
+                this.sound.play('menu_select');
+                this.startGame();
+            }
         }
     }
 
     startGame() {
-        Game.scene.start('play');
-        Game.scene.remove('menu');
-    }
-
-    startCredit() {
-        Game.scene.start('credit');
-        Game.scene.remove('menu');
+        this.scene.start('play');
     }
 
     defineKeys() {

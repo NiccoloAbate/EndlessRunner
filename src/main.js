@@ -5,7 +5,7 @@ let config = {
     //Game Canvas scales with width and height of window
     width: window.innerWidth * window.devicePixelRatio * 0.75,
     height: window.innerHeight * window.devicePixelRatio,
-    scene: [Menu, Play]
+    scene: [Menu, Play, GameOver]
 }
 
 let borderUISize = config.height / 15;
