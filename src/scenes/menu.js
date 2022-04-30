@@ -28,8 +28,8 @@ class Menu extends Phaser.Scene {
         this.menuConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
-            backgroundColor: '#F3B141',
-            color: '#843605',
+            backgroundColor: '#FFFFFF',
+            color: '#000000',
             align: 'right',
             padding: {
             top: 5,
@@ -40,7 +40,13 @@ class Menu extends Phaser.Scene {
 
         // show loading text
         this.loadingText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
-        'LOADING', this.menuConfig).setOrigin(0.5);
+        ' LOADING ', this.menuConfig).setOrigin(0.5);
+        this.left = this.add.text(width / 4, height + borderUISize/100 - borderPadding,
+        ' Credits ', this.menuConfig).setOrigin(0.5);
+        this.middle = this.add.text(width / 2, height + borderUISize/100 - borderPadding,
+        ' Play ', this.menuConfig).setOrigin(0.5);
+        this.right = this.add.text(3* width / 4, height + borderUISize/100 - borderPadding,
+        ' Tutorial ', this.menuConfig).setOrigin(0.5);
     }
 
     create() {
@@ -51,8 +57,8 @@ class Menu extends Phaser.Scene {
 
         this.defineKeys();
 
-        this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
-        'Press Enter to Begin', this.menuConfig).setOrigin(0.5);
+        this.startText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
+        ' Press Enter to Begin ', this.menuConfig).setOrigin(0.5);
 
         // init player entity
         this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
@@ -62,21 +68,69 @@ class Menu extends Phaser.Scene {
 
         this.initLanes(3);
 
-        this.player.keyRight.on("down", () => {
+        this.player.keyLeft.on("down", () => {
             // will be moving into left
             if (this.player.laneIndex == 1) {
-                // something happens on the left
-                // credits or optoins or something
+                // credit text
+                this.startText.destroy();
+                this.creditText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
+                ' Credits ', this.menuConfig).setOrigin(0.5);
+                this.creditText2 = this.add.text(width / 2, height / 2 - borderUISize+ borderPadding,
+                ' Game coding and Music: Niccolo Abate ', this.menuConfig).setOrigin(0.5);
+                this.creditText3 = this.add.text(width / 2, height / 2 - borderUISize + borderPadding * 3,
+                ' Asset creation: Michael Jasper ', this.menuConfig).setOrigin(0.5);
+                this.creditText4 = this.add.text(width / 2, height / 2 - borderUISize + borderPadding * 5,
+                ' Game coding: Johnny Wong ', this.menuConfig).setOrigin(0.5);
+                
             }
+        });
+        this.player.keyRight.on("down", () => {
+            // will be moving into center
+            
+                // normal start Text
+                this.creditText.destroy();
+                this.creditText2.destroy();
+                this.creditText3.destroy();
+                this.creditText4.destroy();
+                
+
+                this.startText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
+                ' Press Enter to Begin ', this.menuConfig).setOrigin(0.5);
+            
         });
         this.player.keyRight.on("down", () => {
             // will be moving into right
             if (this.player.laneIndex == this.player.lanes.length - 2) {
-                // something happens on the right
-                this.sound.play('menu_select');
-                this.time.delayedCall(500, () => this.startGame());
+                // tutorial text
+                this.startText.destroy();
+                this.tutorialText = this.add.text(width / 2, height / 2 - borderUISize- borderPadding,
+                ' Press Enter to Interact with the menu ', this.menuConfig).setOrigin(0.5);
+                this.tutorialText2 = this.add.text(width / 2, height / 2 - borderUISize+ borderPadding,
+                ' press the LEFT and RIGHT arrow keys to move the paddle ', this.menuConfig).setOrigin(0.5);
+                this.tutorialText3 = this.add.text(width / 2, height / 2 - borderUISize + borderPadding * 3,
+                ' Collect the green orbs to increase score ', this.menuConfig).setOrigin(0.5);
+                this.tutorialText4 = this.add.text(width / 2, height / 2 - borderUISize + borderPadding * 5,
+                ' Dodge the red crosses ', this.menuConfig).setOrigin(0.5);
+                this.tutorialText5 = this.add.text(width / 2, height / 2 - borderUISize + borderPadding * 7,
+                ' Collect the yellow triangles for power ups ', this.menuConfig).setOrigin(0.5);
             }
         });
+        this.player.keyLeft.on("down", () => {
+            // will be moving into center
+            if (this.player.laneIndex == 2) {
+                // normal start Text
+                this.tutorialText.destroy();
+                this.tutorialText2.destroy();
+                this.tutorialText3.destroy();
+                this.tutorialText4.destroy();
+                this.tutorialText5.destroy();
+
+                this.startText = this.add.text(width / 2, height / 2 - borderUISize - borderPadding,
+                ' Press Enter to Begin , arrows to navigate', this.menuConfig).setOrigin(0.5);
+            }
+        });
+        
+        
     }
 
     update(time, delta) {
@@ -90,6 +144,11 @@ class Menu extends Phaser.Scene {
 
     startGame() {
         Game.scene.start('play');
+        Game.scene.remove('menu');
+    }
+
+    startCredit() {
+        Game.scene.start('credit');
         Game.scene.remove('menu');
     }
 

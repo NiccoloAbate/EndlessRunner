@@ -56,8 +56,8 @@ class Play extends Phaser.Scene {
         this.scoreConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
-            backgroundColor: '#F3B141',
-            color: '#843605',
+            backgroundColor: '#FFFFFF',
+            color: '#000000',
             align: 'right',
             padding: {
             top: 5,
@@ -79,8 +79,8 @@ class Play extends Phaser.Scene {
         this.healthTextConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
-            backgroundColor: '#F3B141',
-            color: '#843605',
+            backgroundColor: '#FFFFFF',
+            color: '#000000',
             align: 'center',
             padding: {
             top: 5,
