@@ -50,6 +50,15 @@ function average(arr) {
   return sum / arr.length;
 }
 
+function isEven(i) {
+  let div = i / 2;
+  return (div == Math.floor(div));
+}
+function isOdd(i) {
+  let div = i / 2;
+  return !(div == Math.floor(div));
+}
+
 let UpdateTime = {
     sRatio: 1000,
     msRatio: 1,

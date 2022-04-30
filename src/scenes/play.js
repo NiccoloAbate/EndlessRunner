@@ -132,6 +132,8 @@ class Play extends Phaser.Scene {
         this.lastBeatDiff = 1;
         // measure diff from last loop (used to track when beats hit)
         this.lastMeasureDiff = 1;
+        // 8th diff from last loop (used to track when beats hit)
+        this.lastEigthDiff = 1;
 
         // init notes array
         this.notes = new Array(0);
@@ -151,16 +153,16 @@ class Play extends Phaser.Scene {
             [1, 0, 0, 0],
             [1, 0, 1, 0],
             [1, 0, 1, 1],
-            [1, 1, 1, 0],
-            [1, 1, 1, 1]
+            [1, 0.25, 1, 0, 1, 0.25, 0, 0],
+            [1, 0.25, 1, 0.25, 1, 0, 1, 0.25]
         ];
         // no 8th note difficulty -- could be [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5] if implemented
-        this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 150];
+        this.difficultyTimeThresholds = [1.5, 7.5, 30, 60, 90, 120];
         this.difficultyLevel = 0;
 
         this.playTime = 0;
 
-        this.trackSwitchTime = 150;
+        this.trackSwitchTime = 120;
         this.readyToSwitchTracks = false;
         this.tracksCompleted = 0;
 
@@ -244,16 +246,15 @@ class Play extends Phaser.Scene {
             this.totalBeatPos = this.currentTrack.stems[0].seek * (1 / 60) * useBPM;
             this.totalMeasurePos = this.beatPos / this.currentTrackInfo.measureSig;
             this.beatPos = this.totalBeatPos % this.beatReset;
+            this.eigthPos = this.beatPos * 2.0;
             this.measurePos = this.totalMeasurePos % this.measureReset;
 
 
-            let beatDiff = this.beatPos - Math.floor(this.beatPos);
-            if (beatDiff < this.lastBeatDiff) {
-                // beat just completed
+            let eigthDiff = this.eigthPos - Math.floor(this.eigthPos);
+            if (eigthDiff < this.lastEigthDiff) {
+                // 8th noted just completed
 
                 // do stuff
-                this.beatCounterText.text = Math.floor(this.beatPos + 1);
-
                 if (this.currentSequence != undefined) {
                     // read notes from sequence
                     let currentSequenceNode = this.currentSequence[this.currentSequenceIndex];
@@ -275,16 +276,39 @@ class Play extends Phaser.Scene {
                 }
                 else {
                     // random notes from difficulty pattern
-                    let notePercent = this.difficultyPatterns[this.difficultyLevel][Math.floor(this.beatPos)];
-                    if (Math.random() < notePercent) {
-                        this.createNote();
+                    let difficultyPattern = this.difficultyPatterns[this.difficultyLevel];
+                    if (difficultyPattern.length == 4) {
+                        // four note beat pattern
+                        if (isEven(Math.floor(this.eigthPos))) {
+                            // must be even note, i.e. a beat
+                            let notePercent = difficultyPattern[Math.floor(this.beatPos)];
+                            if (Math.random() < notePercent) {
+                                this.createNote();
+                            }
+                        } 
+                    }
+                    else {
+                        let notePercent = difficultyPattern[Math.floor(this.eigthPos)];
+                        if (Math.random() < notePercent) {
+                            this.createNote();
+                        }
                     }
                 }
+            }
+            this.lastEigthDiff = eigthDiff;
+            
+            let beatDiff = this.beatPos - Math.floor(this.beatPos);
+            if (beatDiff < this.lastBeatDiff) {
+                // beat just completed
+
+                // do stuff
+                this.beatCounterText.text = Math.floor(this.beatPos + 1);
 
                 if (this.metronome)
                     this.sound.play('menu_select', {detune : 1200});
             }
             this.lastBeatDiff = beatDiff;
+
             let measureDiff = this.measurePos - Math.floor(this.measurePos);
             if (measureDiff < this.lastMeasureDiff) {
                 // measure just completed
@@ -421,9 +445,11 @@ class Play extends Phaser.Scene {
         }
     }
     normalNoteHit(note) {
-        // the amount of error from beat
-        let beatDiff = Math.min(this.beatPos - Math.floor(this.beatPos),
-            Math.ceil(this.beatPos) - this.beatPos);
+        // the amount of error from target beat
+        let beatDiff = Math.min(Math.abs(this.beatPos - note.targetBeat),
+        Math.abs(this.beatPos - (note.targetBeat + this.currentTrackInfo.measureSig)));
+        console.log('beat ' + this.beatPos);
+        console.log('target ' + note.targetBeat);
         
         //console.log(beatDiff);
 
@@ -437,8 +463,9 @@ class Play extends Phaser.Scene {
         
         // increment health
         this.health += maxHealthGain * healthMult / this.difficultyLevel * 1.5;
-        console.log(maxHealthGain * healthMult / this.difficultyLevel * 1.5);
+        console.log('diff ' + maxHealthGain * healthMult / this.difficultyLevel * 1.5);
 
+        console.log("");
         // snap health to valid range
         this.health = Math.min(this.health, this.maxHealth);
 
@@ -483,13 +510,18 @@ class Play extends Phaser.Scene {
             spriteName = 'obstacle';
         }
 
-        let x = this.lanes[getRandomInt(0, this.lanes.length)].x;
+        let laneInd = getRandomInt(0, this.lanes.length);
+        let x = this.lanes[laneInd].x;
         let newNote = new Note(this, x, 0, spriteName);
         newNote.setOrigin(0.5, 0.5);
         newNote.setScale(3.0, 3.0);
         newNote.type = type;
 
         newNote.speed = this.computeNoteSpeed();
+        newNote.targetBeat = this.computeNoteTargetBeat();
+        newNote.laneInd = laneInd;
+
+        //console.log(newNote.targetBeat);
 
         // add note to current notes
         this.notes.push(newNote);
@@ -503,6 +535,9 @@ class Play extends Phaser.Scene {
         // move speed of note based on BPM - note will cross screen in one measures time
         return (1 / UpdateTime.mRatio) * (1 / this.currentTrackInfo.measureSig)
         * this.currentTrackInfo.BPM * (height - borderUISize - slideMargin);
+    }
+    computeNoteTargetBeat() {
+        return (Math.floor(this.eigthPos) / 2);
     }
 
     outOfHealth() {
