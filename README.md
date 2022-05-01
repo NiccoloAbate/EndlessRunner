@@ -25,7 +25,7 @@ A track splitting effect in which certain parts of the track are muted when you 
 
 Other interesting creative tilts:
 
-A player trail effect that using the average n positions of the player in order to smooth the trail while the player jumps over gaps immediately. (src/prefabs/player.js 90-109)
+A player trail effect that using the average n positions of the player in order to smooth the trail while the player jumps over gaps immediately. (src/prefabs/player.js 138-157)
 
 A gameover scene that is hosted on top of the play scene so that music continues and the game is still in the background. This required some clever scene handling code.
 
@@ -33,8 +33,6 @@ A gameover scene that is hosted on top of the play scene so that music continues
 Some js utility functions were copied or adapted into src/utils.js (see comments in the file).
 
 Track 1 was originally made for Niccolo's Rocket Patrol Mod, but edited and ported for this project, originally as a test track, but now included for some extra diversity of tracks. (https://github.com/NiccoloAbate/RocketPatrolMod)
-
-The menu select sound is currently Nathan's rocket patrol sound... hopefully this will be updated, however there have been lots of other audio tasks to attend to. (https://github.com/nathanaltice/RocketPatrol)
 
 Lots of other fun improvements and inclusion we all wish we could have made! :)
 

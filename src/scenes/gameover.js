@@ -39,9 +39,8 @@ class GameOver extends Phaser.Scene {
         ' <- Menu | Play -> ', this.menuConfig).setOrigin(0.5);
 
         // init player entity
-        this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
-        this.player.setOrigin(0.5, 0);
-        this.player.setScale(width/150, height/500);
+        this.player = new Player(this, width/2, height - borderUISize - borderPadding);
+        this.player.setScale(width/300, height/500);
         this.player.setControls(keyLEFT, keyRIGHT);
 
         this.initLanes(3);

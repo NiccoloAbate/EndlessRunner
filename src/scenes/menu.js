@@ -8,19 +8,21 @@ class Menu extends Phaser.Scene {
         let height = config.height;
 
         // load audio
-        this.load.audio('menu_select', 'assets/sfx/blip_select12.wav');
+        this.load.audio('menu_select', 'assets/sfx/Menu Select.wav');
         Audio.preloadMulti(this, 'Track0', Track0StemFileNames, Track0StemNames);
         Audio.preloadMulti(this, 'Track1', Track1StemFileNames, Track1StemNames);
         Audio.preloadMulti(this, 'Track2', Track2StemFileNames, Track2StemNames);
         Audio.preloadMulti(this, 'Track3', Track3StemFileNames, Track3StemNames);
 
         // load images/tile sprites
-        this.load.image('player', './assets/sprites/PlayerBlock.png');
+        this.load.atlas('player', './assets/sprites/playerblockatlas/playerblocksheet.png',
+            './assets/sprites/playerblockatlas/playerblockatlas.json');
         this.load.image('note', './assets/sprites/CircleToHit.png');
         this.load.image('obstacle', "./assets/sprites/ObsticleX.png");
         this.load.image('power', "./assets/sprites/TriangleCoin.png");
         this.load.image('leftArrowNote', "./assets/sprites/hitToGoToNextLane.png");
         this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
+        this.load.image('background1', './assets/sprites/Endless_Runner_Background_New01.png');
         this.load.image('leftArrow', './assets/sprites/LeftArrow.png');
         this.load.image('rightArrow', './assets/sprites/RightArrow.png');
         this.load.image('healthBar', './assets/sprites/HealthBar.png');
@@ -62,9 +64,8 @@ class Menu extends Phaser.Scene {
         ' Press Enter to Begin ', this.menuConfig).setOrigin(0.5);
 
         // init player entity
-        this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
-        this.player.setOrigin(0.5, 0);
-        this.player.setScale(width/150, height/500);
+        this.player = new Player(this, width/2, height - borderUISize - borderPadding);
+        this.player.setScale(width/300, height/500);
         this.player.setControls(keyLEFT, keyRIGHT);
 
         this.initLanes(3);

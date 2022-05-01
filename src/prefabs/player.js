@@ -1,11 +1,43 @@
 // Player prefab
 class Player extends Phaser.GameObjects.Sprite {
 
-    constructor(scene, x, y, texture) {
-        super(scene, x, y, texture);
+    constructor(scene, x, y) {
+        const textureAtlas = 'player';
+        super(scene, x, y, textureAtlas);
+
+        this.setOrigin(0.5, 0.5);
+        this.y += this.height / 2;
+
+        this.anims.create({
+            key: 'idle',
+            frames: [{key: 'player', frame: 'smile', duration: 1000},
+            {key: 'player', frame: 'wink', duration: 250},
+            {key: 'player', frame: 'smile', duration: 750},
+            {key: 'player', frame: 'wink', duration: 250},
+            {key: 'player', frame: 'smile', duration: 1500},
+            {key: 'player', frame: 'wink', duration: 250}],
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'yay',
+            frames: [{key: 'player', frame: 'smile', duration: 100},
+                {key: 'player', frame: 'yay', duration: 250}],
+            frameRate: 10,
+            repeat: 1
+        });
+        this.anims.create({
+            key: 'sad',
+            frames: [{key: 'player', frame: 'emerging', duration: 100},
+                {key: 'player', frame: 'sad', duration: 250}],
+            frameRate: 10,
+            repeat: 1
+        });
+
+        this.anims.play('idle');
 
         this.scene = scene;
-        this.texture = texture;
+        this.textureAtlas = textureAtlas;
 
         this.snapToLanes = false;
         this.lanes = [];
@@ -20,6 +52,21 @@ class Player extends Phaser.GameObjects.Sprite {
 
         // add object to existing scene
         scene.add.existing(this);
+    }
+
+    sadAnim() {
+        const animDur = 350;
+        this.anims.play('sad');
+        this.on('animationcomplete', () => {    // callback after anim completes
+            this.anims.play('idle');
+        });
+    }
+    yayAnim() {
+        const animDur = 350;
+        this.anims.play('yay');
+        this.on('animationcomplete', () => {    // callback after anim completes
+            this.anims.play('idle');
+        });
     }
 
     reset() {}
@@ -88,7 +135,8 @@ class Player extends Phaser.GameObjects.Sprite {
 
     // adapted from paddle parkour
     spawnShadow() {
-        let shadow = this.scene.add.image(average(this.lastShadowPositions), this.y, this.texture).setOrigin(0.5, 0);
+        let shadow = this.scene.add.image(average(this.lastShadowPositions), this.y,
+        this.anims.currentFrame.textureKey, this.anims.currentFrame.textureFrame).setOrigin(0.5, 0.5);
         shadow.scaleY = this.scaleY;            // scale to parent paddle
         shadow.scaleX = this.scaleX;
         shadow.tint = Math.random() * 0xFFFFFF;   // tint w/ rainbow colors

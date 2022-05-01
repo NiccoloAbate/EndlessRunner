@@ -16,7 +16,8 @@ class Play extends Phaser.Scene {
 
         // init background
         this.backgrounds = new Array(1);
-        this.backgrounds[0] = this.add.tileSprite(0, 0, width, height, 'background0').setOrigin(0, 0);
+        this.backgrounds[0] = this.add.tileSprite(0, 0, 0, 0, 'background0').setOrigin(0, 0);
+        //this.backgrounds[1] = this.add.tileSprite(0, 0, width, height, 'background1').setOrigin(0, 0);
         // manually adjust background size
         this.backgrounds[0].displayWidth = Game.config.width;
         this.backgrounds[0].displayHeight = Game.config.height;
@@ -24,7 +25,7 @@ class Play extends Phaser.Scene {
         this.backgrounds.forEach(b => b.setDepth(-2));
         this.backgroundScrollSpeeds = new Array(2);
         this.backgroundScrollSpeeds[0] = 4;
-        this.backgroundScrollSpeeds[1] = 1;
+        this.backgroundScrollSpeeds[1] = 3;
 
         // init player settings
         Game.player = {
@@ -32,9 +33,8 @@ class Play extends Phaser.Scene {
         };
 
         // init player entity
-        this.player = new Player(this, width/2, height - borderUISize - borderPadding, 'player');
-        this.player.setOrigin(0.5, 0);
-        this.player.setScale(width/150, height/500);
+        this.player = new Player(this, width/2, height - borderUISize - borderPadding);
+        this.player.setScale(width/300, height/500);
         this.player.setControls(keyLEFT, keyRIGHT);
         
         let rectColor = 0x00FF00;
@@ -84,8 +84,8 @@ class Play extends Phaser.Scene {
         //this.healthText.setOrigin(0.5, 0.5);
         //this.healthText.setDepth(2);
 
-        const healthBarInteriorX = 228;
-        this.healthBarInterior = this.add.rectangle(healthBarInteriorX, borderUISize, 200, 18, '0xFF0000').setOrigin(0, 0.5);
+        const healthBarInteriorXOffset = -90;
+        this.healthBarInterior = this.add.rectangle(width / 2 + healthBarInteriorXOffset, borderUISize, 200, 18, '0xFF0000').setOrigin(0, 0.5);
         const healthBarXOffset = 20;
         this.healthBar = this.add.image(width / 2 + healthBarXOffset, borderUISize, 'healthBar').setOrigin(0.5, 0.5);
         this.healthBar.scaleX = 0.5;
@@ -471,6 +471,9 @@ class Play extends Phaser.Scene {
         this.health -= healthLoss;
 
         this.healthBarShake();
+
+        let sConfig = { detune: -1200, volume: 0.75 };
+        this.sound.play('menu_select', sConfig);
     }
 
     noteHit(note) {
@@ -516,6 +519,8 @@ class Play extends Phaser.Scene {
         let det = (((-1 * beatDiff) + 0.5) * 2) * 1200;
         let sConfig = { detune: det };
         this.sound.play('menu_select', sConfig);
+
+        this.player.yayAnim();
     }
     slowPowerHit(note) {
         this.normalNoteHit(note);
@@ -530,6 +535,7 @@ class Play extends Phaser.Scene {
         this.sound.play('menu_select', sConfig);
 
         this.healthBarShake();
+        this.player.sadAnim();
     }
 
     createNote(type) {
