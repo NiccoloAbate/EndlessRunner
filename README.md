@@ -34,5 +34,7 @@ Some js utility functions were copied or adapted into src/utils.js (see comments
 
 Track 1 was originally made for Niccolo's Rocket Patrol Mod, but edited and ported for this project, originally as a test track, but now included for some extra diversity of tracks. (https://github.com/NiccoloAbate/RocketPatrolMod)
 
+After added several more tracks the load time increased a lot. 1 Track is too long and could be reduced, plus we would want background loading, but no time for that.
+
 Lots of other fun improvements and inclusion we all wish we could have made! :)
 
