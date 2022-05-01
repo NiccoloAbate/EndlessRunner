@@ -539,6 +539,8 @@ class Play extends Phaser.Scene {
     }
 
     createNote(type) {
+        let lastNote = this.getLastNote();
+
         let spriteName;
         
         if (type == undefined) {
@@ -558,7 +560,9 @@ class Play extends Phaser.Scene {
             spriteName = 'obstacle';
         }
 
-        let laneInd = getRandomInt(0, this.lanes.length);
+        // lane within 2 of last lane
+        let laneInd = getRandomInt(Math.max(0, lastNote.laneInd - 2), Math.min(this.lanes.length, lastNote.laneInd + 3));
+        //let laneInd = getRandomInt(0, this.lanes.length);
         let x = this.lanes[laneInd].x;
         let newNote = new Note(this, x, 0, spriteName);
         newNote.setOrigin(0.5, 0.5);
@@ -573,6 +577,13 @@ class Play extends Phaser.Scene {
 
         // add note to current notes
         this.notes.push(newNote);
+    }
+
+    getLastNote() {
+        if (this.notes.length == 0) {
+            return {laneInd : 1, type : 'note'};
+        }
+        return this.notes[this.notes.length - 1];
     }
 
     computeNoteSpeed() {

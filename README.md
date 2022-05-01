@@ -19,9 +19,9 @@ Programmable note sequences (used for tutorial for example) or random note gener
 
 Audio effects include:
 
-A slowdown effect which lerps the BPM / detune on the music track over time (src/scenes/play.js 626-670). All BPM dependent logic such as health drain and note speed as also updated accordingly to stay in sync, via the this.currentTrackInfo.BPM variable.
+A slowdown effect which lerps the BPM / detune on the music track over time (src/scenes/play.js 644-686). All BPM dependent logic such as health drain and note speed as also updated accordingly to stay in sync, via the this.currentTrackInfo.BPM variable.
 
-A track splitting effect in which certain parts of the track are muted when you lose the game. (src/scenes/play.js 588-589).
+A track splitting effect in which certain parts of the track are muted when you lose the game. (src/scenes/play.js 605-606).
 
 Other interesting creative tilts:
 
