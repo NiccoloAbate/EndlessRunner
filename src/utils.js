@@ -3,6 +3,7 @@ function getRandomInclusive(min, max) {
     return (Math.random() * (max - min) + min);
 }
 
+// from javascript documentation
 function getRandomIntInclusive(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);

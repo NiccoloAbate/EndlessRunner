@@ -1,3 +1,4 @@
+// See README for team, game name, breakdown, notes, etc.
 
 let config = {
     type: Phaser.CANVAS,
