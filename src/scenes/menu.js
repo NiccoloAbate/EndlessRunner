@@ -23,6 +23,7 @@ class Menu extends Phaser.Scene {
         this.load.image('background0', './assets/sprites/Endless_Runner_Background-1.png');
         this.load.image('leftArrow', './assets/sprites/LeftArrow.png');
         this.load.image('rightArrow', './assets/sprites/RightArrow.png');
+        this.load.image('healthBar', './assets/sprites/HealthBar.png');
 
         // menu text config
         this.menuConfig = {

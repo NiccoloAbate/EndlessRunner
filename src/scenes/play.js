@@ -37,20 +37,8 @@ class Play extends Phaser.Scene {
         this.player.setScale(width/150, height/500);
         this.player.setControls(keyLEFT, keyRIGHT);
         
-
         let rectColor = 0x00FF00;
         let borderColor = 0xFFFFFF;
-
-        /*
-        // green UI background
-        this.add.rectangle(0, borderUISize + borderPadding, width, borderUISize * 2, rectColor).setOrigin(0, 0).setDepth(2);
-        // white borders
-        this.add.rectangle(0, 0, width, borderUISize, borderColor).setOrigin(0, 0).setDepth(2);
-        this.add.rectangle(0, height - borderUISize, width, borderUISize, borderColor).setOrigin(0, 0).setDepth(2);
-        this.add.rectangle(0, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
-        this.add.rectangle(width - borderUISize, 0, borderUISize, height, borderColor).setOrigin(0, 0).setDepth(2);
-        */
-
 
         // display score
         this.scoreConfig = {
@@ -65,17 +53,19 @@ class Play extends Phaser.Scene {
             },
             fixedWidth: 100
         }
-        this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2,
+        this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize,
             Game.player.score, this.scoreConfig);
         this.scoreLeft.setDepth(2);
+        this.scoreLeft.setOrigin(0.5, 0.5);
         // display beat counter
-        this.beatCounterText = this.add.text(width - borderUISize - borderPadding - this.scoreConfig.fixedWidth,
-            borderUISize + borderPadding*2, 1, this.scoreConfig);
+        this.beatCounterText = this.add.text(width - borderUISize - borderUISize,
+            borderUISize, 1, this.scoreConfig);
         this.beatCounterText.setDepth(2);
+        this.beatCounterText.setOrigin(0.5, 0.5);
 
         // init health and health counter
-        this.health = 100;
         this.maxHealth = 150;
+        this.health = this.maxHealth;
         this.healthTextConfig = {
             fontFamily: 'Courier',
             fontSize: '28px',
@@ -89,9 +79,17 @@ class Play extends Phaser.Scene {
             fixedWidth: 100
         }
         this.formatHealthText = h => Math.max(Math.floor(h), 0); 
-        this.healthText = this.add.text((width / 2) - (this.healthTextConfig.fixedWidth / 2),
-            borderUISize + borderPadding*2, this.formatHealthText(this.timeLeft), this.healthTextConfig);
-        this.healthText.setDepth(2);
+        //this.healthText = this.add.text((width / 2) - (this.healthTextConfig.fixedWidth / 2),
+        //    borderUISize, this.formatHealthText(this.timeLeft), this.healthTextConfig);
+        //this.healthText.setOrigin(0.5, 0.5);
+        //this.healthText.setDepth(2);
+
+        const healthBarInteriorX = 228;
+        this.healthBarInterior = this.add.rectangle(healthBarInteriorX, borderUISize, 200, 18, '0xFF0000').setOrigin(0, 0.5);
+        const healthBarXOffset = 20;
+        this.healthBar = this.add.image(width / 2 + healthBarXOffset, borderUISize, 'healthBar').setOrigin(0.5, 0.5);
+        this.healthBar.scaleX = 0.5;
+        this.healthBar.scaleY = 1.0;
 
         // menu text config
         this.menuConfig = {
@@ -229,7 +227,7 @@ class Play extends Phaser.Scene {
             const healthSpeed = 5 / UpdateTime.sRatio; // 5 per second
             let BPMRatio = this.currentTrackInfo.BPM / this.currentTrackDefaultInfo.BPM;
             this.health -= delta * healthSpeed * BPMRatio;
-            this.healthText.text = this.formatHealthText(this.health);
+            this.updateHealthBar(this.formatHealthText(this.health));
 
             this.playTime += delta;
 
@@ -384,6 +382,23 @@ class Play extends Phaser.Scene {
         this.updateEffects(delta);
     }
 
+    updateHealthBar(newHealth) {
+        //this.healthText.text = newHealth;
+        this.healthBarInterior.scaleX = newHealth / this.maxHealth;
+    }
+
+    healthBarShake() {
+        const tweenDuration = 250;
+        this.tweens.add({ 
+            targets: [this.healthBar, this.healthBarInterior], 
+            alpha: { from: 0, to: 1.0 },
+            scaleY: { from: 0, to: 1.0},
+            duration: tweenDuration,
+            ease: 'Linear',
+            repeat: 4
+        });
+    }
+
     flashArrows() {
         let leftArrow = this.add.image(this.lanes[0].x, Game.config.height / 2, 'leftArrow');
         leftArrow.setOrigin(0.5, 0.5);
@@ -452,8 +467,10 @@ class Play extends Phaser.Scene {
         }
     }
     normalNoteMissed(note) {
-        const healthLoss = 15;
+        const healthLoss = 20;
         this.health -= healthLoss;
+
+        this.healthBarShake();
     }
 
     noteHit(note) {
@@ -506,11 +523,13 @@ class Play extends Phaser.Scene {
         this.startSlowDownEffect();
     }
     obstacleHit(note) {
-        const healthLoss = 15;
+        const healthLoss = 20;
         this.health -= healthLoss;
 
         let sConfig = { detune: -1200, volume: 0.75 };
         this.sound.play('menu_select', sConfig);
+
+        this.healthBarShake();
     }
 
     createNote(type) {
@@ -519,7 +538,7 @@ class Play extends Phaser.Scene {
         if (type == undefined) {
             // could add more note types
             let noteTypes = ['note', 'slowPower', 'obstacle'];
-            let typeWeights = [0.95, 0.025, 0.025];
+            let typeWeights = [0.9, 0.02, 0.08];
             type = randomChoiceWeighted(noteTypes, typeWeights);
         }
 
