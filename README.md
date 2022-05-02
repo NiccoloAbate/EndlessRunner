@@ -15,7 +15,7 @@ A small library for handling audio (and specifically multitrack audio) is in src
 
 Code for beat tracking is initialized in the create() method of Play (134-148) and updated in the update() method of Play (253-260, with on-8th, on-beat, and on-measure callbacks handled in the following blocks of code). The beat position stored in these variables is used throughout the rest of the Play scene.
 
-Programmable note sequences (used for tutorial for example) or random note generation best of difficulty patterns. Tutorial sequence creation (src/scenes/play.js 181-188). Programmed sequence playback (src/scenes/play.js 269-285). Random note difficulty patterns creation (src/scenes/play.js 163-173). Random note generation based on difficulty patterns (src/scenes/play.js 288-305)
+Programmable note sequences (used for tutorial for example) or random note generation based off of difficulty patterns. Tutorial sequence creation (src/scenes/play.js 181-188). Programmed sequence playback (src/scenes/play.js 269-285). Random note difficulty patterns creation (src/scenes/play.js 163-173). Random note generation based on difficulty patterns (src/scenes/play.js 288-305)
 
 Audio effects include:
 
